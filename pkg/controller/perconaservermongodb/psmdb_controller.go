@@ -382,6 +382,23 @@ func (r *ReconcilePerconaServerMongoDB) Reconcile(ctx context.Context, request r
 		}
 	}
 
+	if cr.Spec.Restore && cr.Status.Restore {
+		log.Info("*********Restoring********")
+		pods, err := psmdb.GetRSPods(ctx, r.client, cr, repls[0].Name, false)
+		if err != nil {
+			log.Error(err, "Error in GetRSPods")
+		}
+		if len(pods.Items) > 0 && cr.Status.Replsets[repls[0].Name].Status == api.AppStateReady {
+			err := r.recoverReplsetNoPrimary(ctx, cr, repls[0], pods.Items[0])
+			if err == nil {
+				log.Info("Config Changed!")
+				cr.Status.Restore = false
+			} else {
+				log.Info("Err in recoverReplsetNoPrimary ", "Error: ", err)
+			}
+		}
+	}
+
 	shards := 0
 	for _, replset := range repls {
 		if (cr.Spec.Sharding.Enabled && replset.ClusterRole == api.ClusterRoleShardSvr) ||

@@ -17,6 +17,16 @@ import (
 	"github.com/percona/percona-server-mongodb-operator/pkg/psmdb/secret"
 )
 
+type UserRole string
+
+const (
+	roleDatabaseAdmin  UserRole = "databaseAdmin"
+	roleClusterAdmin   UserRole = "clusterAdmin"
+	roleUserAdmin      UserRole = "userAdmin"
+	roleClusterMonitor UserRole = "clusterMonitor"
+	roleBackup         UserRole = "backup"
+)
+
 func getUserSecret(ctx context.Context, cl client.Reader, cr *api.PerconaServerMongoDB, name string) (corev1.Secret, error) {
 	secrets := corev1.Secret{}
 	err := cl.Get(ctx, types.NamespacedName{Name: name, Namespace: cr.Namespace}, &secrets)

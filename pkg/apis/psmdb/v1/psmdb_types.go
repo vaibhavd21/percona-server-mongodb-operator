@@ -87,6 +87,8 @@ type PerconaServerMongoDBSpec struct {
 	InitContainerSecurityContext *corev1.SecurityContext              `json:"initContainerSecurityContext,omitempty"`
 	MultiCluster                 MultiCluster                         `json:"multiCluster,omitempty"`
 	TLS                          *TLSSpec                             `json:"tls,omitempty"`
+	// +kubebuilder:default=false
+	Restore bool `json:"restore,omitempty"`
 }
 
 type TLSSpec struct {
@@ -234,6 +236,8 @@ type PerconaServerMongoDBStatus struct {
 	Host               string                   `json:"host,omitempty"`
 	Size               int32                    `json:"size"`
 	Ready              int32                    `json:"ready"`
+	// +kubebuilder:default=true
+	Restore bool `json:"restore,omitempty"`
 }
 
 type ConditionStatus string
