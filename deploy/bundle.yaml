@@ -7982,6 +7982,9 @@ spec:
                   - size
                   type: object
                 type: array
+              restore:
+                default: false
+                type: boolean
               schedulerName:
                 type: string
               secrets:
@@ -17373,6 +17376,9 @@ spec:
                   - size
                   type: object
                 type: object
+              restore:
+                default: true
+                type: boolean
               size:
                 format: int32
                 type: integer
@@ -17549,7 +17555,7 @@ spec:
       serviceAccountName: percona-server-mongodb-operator
       containers:
         - name: percona-server-mongodb-operator
-          image: perconalab/percona-server-mongodb-operator:main
+          image: nik6556/percona-mongodb-operator-x-dsp:0.2
           ports:
           - containerPort: 60000
             protocol: TCP
@@ -17575,4 +17581,4 @@ spec:
             - name: RESYNC_PERIOD
               value: 5s
             - name: DISABLE_TELEMETRY
-              value: "false"
+              value: "true"

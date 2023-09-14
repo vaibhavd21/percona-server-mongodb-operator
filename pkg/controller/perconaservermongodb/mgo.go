@@ -805,13 +805,14 @@ func (r *ReconcilePerconaServerMongoDB) recoverReplsetNoPrimary(ctx context.Cont
 	}
 
 	for i := 0; i < len(cnf.Members); i++ {
-		tags := []mongo.ConfigMember(cnf.Members)[i].Tags
-		podName, ok := tags["podName"]
-		if !ok {
-			continue
-		}
+		// tags := []mongo.ConfigMember(cnf.Members)[i].Tags
+		podName := pod.Name
+		// if !ok {
+		// 	continue
+		// }
 		logf.FromContext(ctx).Info("Pod Name assigining to config", "podname", podName)
-		[]mongo.ConfigMember(cnf.Members)[i].Host = "mongo-2-rs0-0.mongo-2-rs0.default.svc.cluster.local:27017"
+		newHostName := podName + "." + replset.ServiceName(cr) + "." + cr.Namespace + ".svc.cluster.local:27017"
+		[]mongo.ConfigMember(cnf.Members)[i].Host = newHostName
 	}
 
 	cnf.Version++

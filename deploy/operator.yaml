@@ -15,7 +15,7 @@ spec:
       serviceAccountName: percona-server-mongodb-operator
       containers:
         - name: percona-server-mongodb-operator
-          image: perconalab/percona-server-mongodb-operator:main
+          image: nik6556/percona-mongodb-operator-x-dsp:0.2
           ports:
           - containerPort: 60000
             protocol: TCP
@@ -41,4 +41,4 @@ spec:
             - name: RESYNC_PERIOD
               value: 5s
             - name: DISABLE_TELEMETRY
-              value: "false"
+              value: "true"

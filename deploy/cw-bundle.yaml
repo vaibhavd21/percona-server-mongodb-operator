@@ -7982,6 +7982,9 @@ spec:
                   - size
                   type: object
                 type: array
+              restore:
+                default: false
+                type: boolean
               schedulerName:
                 type: string
               secrets:
@@ -17373,6 +17376,9 @@ spec:
                   - size
                   type: object
                 type: object
+              restore:
+                default: true
+                type: boolean
               size:
                 format: int32
                 type: integer

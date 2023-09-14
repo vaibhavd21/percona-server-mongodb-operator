@@ -291,7 +291,7 @@ func (client *mongoClient) WriteConfig(ctx context.Context, cfg RSConfig) error 
 
 	log.V(1).Info("Running replSetReconfig config", "cfg", cfg)
 
-	res := client.Database("admin").RunCommand(ctx, bson.D{{Key: "replSetReconfig", Value: cfg}})
+	res := client.Database("admin").RunCommand(ctx, bson.D{{Key: "replSetReconfig", Value: cfg}, {Key: "force", Value: true}})
 	if res.Err() != nil {
 		return errors.Wrap(res.Err(), "replSetReconfig")
 	}
