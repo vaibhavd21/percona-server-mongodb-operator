@@ -77,7 +77,8 @@ func ToInterface(client *mongo.Client) Client {
 func Dial(conf *Config) (Client, error) {
 	ctx, connectcancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer connectcancel()
-
+	log := logf.FromContext(ctx)
+	log.Info("In the dial")
 	opts := options.Client().
 		SetHosts(conf.Hosts).
 		SetReplicaSet(conf.ReplSetName).
@@ -112,6 +113,46 @@ func Dial(conf *Config) (Client, error) {
 	}
 
 	return ToInterface(client), nil
+}
+
+func DialToMongoDBClient(conf *Config) (*mongo.Client, error) {
+	ctx, connectcancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer connectcancel()
+
+	opts := options.Client().
+		SetHosts(conf.Hosts).
+		SetReplicaSet(conf.ReplSetName).
+		SetAuth(options.Credential{
+			Password: conf.Password,
+			Username: conf.Username,
+		}).
+		SetWriteConcern(writeconcern.New(writeconcern.WMajority(), writeconcern.J(true))).
+		SetReadPreference(readpref.Primary()).SetTLSConfig(conf.TLSConf).
+		SetDirect(conf.Direct)
+
+	client, err := mongo.Connect(ctx, opts)
+	if err != nil {
+		return nil, errors.Wrap(err, "connect to mongo rs")
+	}
+
+	defer func() {
+		if err != nil {
+			derr := client.Disconnect(ctx)
+			if derr != nil {
+				log.Error(err, "failed to disconnect")
+			}
+		}
+	}()
+
+	ctx, pingcancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer pingcancel()
+
+	err = client.Ping(ctx, readpref.Primary())
+	if err != nil {
+		return nil, errors.Wrap(err, "ping mongo")
+	}
+
+	return client, nil
 }
 
 func (client *mongoClient) SetDefaultRWConcern(ctx context.Context, readConcern, writeConcern string) error {

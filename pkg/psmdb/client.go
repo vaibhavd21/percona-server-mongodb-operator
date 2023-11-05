@@ -9,6 +9,7 @@ import (
 	api "github.com/percona/percona-server-mongodb-operator/pkg/apis/psmdb/v1"
 	"github.com/percona/percona-server-mongodb-operator/pkg/psmdb/mongo"
 	"github.com/percona/percona-server-mongodb-operator/pkg/psmdb/tls"
+	mongodb "go.mongodb.org/mongo-driver/mongo"
 )
 
 type Credentials struct {
@@ -93,4 +94,24 @@ func StandaloneClient(ctx context.Context, k8sclient client.Client, cr *api.Perc
 	}
 
 	return mongo.Dial(&conf)
+}
+
+func StandaloneMongoDBClient(ctx context.Context, k8sclient client.Client, cr *api.PerconaServerMongoDB, c Credentials, host string) (*mongodb.Client, error) {
+	conf := mongo.Config{
+		Hosts:    []string{host},
+		Username: c.Username,
+		Password: c.Password,
+		Direct:   true,
+	}
+
+	if !cr.Spec.UnsafeConf {
+		tlsCfg, err := tls.Config(ctx, k8sclient, cr)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to get TLS config")
+		}
+
+		conf.TLSConf = &tlsCfg
+	}
+
+	return mongo.DialToMongoDBClient(&conf)
 }

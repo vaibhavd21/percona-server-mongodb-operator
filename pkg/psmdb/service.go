@@ -7,6 +7,8 @@ import (
 	"strings"
 	"time"
 
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
+
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -213,6 +215,8 @@ func getIngressPoint(ctx context.Context, cl client.Client, serviceNN types.Name
 
 // GetReplsetAddrs returns a slice of replset host:port addresses
 func GetReplsetAddrs(ctx context.Context, cl client.Client, cr *api.PerconaServerMongoDB, rsName string, rsExposed bool, pods []corev1.Pod) ([]string, error) {
+	log := logf.FromContext(ctx)
+
 	addrs := make([]string, 0)
 
 	for _, pod := range pods {
@@ -221,8 +225,8 @@ func GetReplsetAddrs(ctx context.Context, cl client.Client, cr *api.PerconaServe
 			return nil, errors.Wrapf(err, "failed to get external hostname for pod %s", pod.Name)
 		}
 		addrs = append(addrs, host)
+		log.Info("Pod Hostname", "pod -> ", pod.Name, "host -> ", host)
 	}
-
 	return addrs, nil
 }
 
@@ -254,10 +258,13 @@ func GetMongosAddrs(ctx context.Context, cl client.Client, cr *api.PerconaServer
 
 // MongoHost returns the mongo host for given pod
 func MongoHost(ctx context.Context, cl client.Client, cr *api.PerconaServerMongoDB, rsName string, rsExposed bool, pod corev1.Pod) (string, error) {
+	log := logf.FromContext(ctx)
 	switch cr.Spec.ClusterServiceDNSMode {
 	case api.DNSModeServiceMesh:
+		log.Info("cluster dns mode service mesh")
 		return GetServiceMeshAddr(cr, pod.Name, cr.Namespace), nil
 	case api.DNSModeInternal:
+		log.Info("cluster dns mode internal")
 		if rsExposed && cr.MCSEnabled() {
 			imported, err := IsServiceImported(ctx, cl, cr, pod.Name)
 			if err != nil {
@@ -273,6 +280,7 @@ func MongoHost(ctx context.Context, cl client.Client, cr *api.PerconaServerMongo
 
 		return GetAddr(cr, pod.Name, rsName), nil
 	case api.DNSModeExternal:
+		log.Info("cluster dns mode external")
 		if rsExposed {
 			if cr.MCSEnabled() {
 				imported, err := IsServiceImported(ctx, cl, cr, pod.Name)
@@ -292,6 +300,7 @@ func MongoHost(ctx context.Context, cl client.Client, cr *api.PerconaServerMongo
 
 		return GetAddr(cr, pod.Name, rsName), nil
 	default:
+		log.Info("cluster dns default")
 		return GetAddr(cr, pod.Name, rsName), nil
 	}
 }
@@ -346,7 +355,7 @@ func getExtAddr(ctx context.Context, cl client.Client, namespace string, pod cor
 
 // GetAddr returns replicaSet pod address in cluster
 func GetAddr(cr *api.PerconaServerMongoDB, pod, replset string) string {
-	return strings.Join([]string{pod, cr.Name + "-" + replset, cr.Namespace, cr.Spec.ClusterServiceDNSSuffix}, ".") +
+	return strings.Join([]string{pod, cr.Name + "-" + replset, cr.Namespace, api.DefaultDNSSuffix}, ".") +
 		":" + strconv.Itoa(int(api.DefaultMongodPort))
 }
 
